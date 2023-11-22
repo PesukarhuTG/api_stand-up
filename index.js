@@ -1,56 +1,68 @@
 import http from 'node:http';
 import fs from 'node:fs/promises';
+import { sendData, sendError } from './modules/sendData.js';
+import { checkFile } from './modules/checkFile.js';
+import { handleComediansRequest } from './modules/handleComediansRequest.js';
+import { handleAddClient } from './modules/handleAddClient.js';
 
 const PORT = 8081;
 const COMEDIANS = './comedians.json';
-const CLIENTS = './clients.json';
-
-const checkFiles = async () => {
-  try {
-    await fs.access(COMEDIANS);
-  } catch (error) {
-    console.error(`Файл ${COMEDIANS} не найден`);
-    return false;
-  }
-
-  try {
-    await fs.access(CLIENTS);
-  } catch (error) {
-    await fs.writeFile(CLIENTS, JSON.stringify([]));
-    console.log(`Файл ${CLIENTS} был создан`);
-    return false;
-  }
-
-  return true;
-};
+export const CLIENTS = './clients.json';
 
 const startServer = async () => {
-  if (!(await checkFiles())) {
+  if (!(await checkFile(COMEDIANS))) {
     return;
   }
 
+  await checkFile(CLIENTS, true);
+
+  const comediansData = await fs.readFile(COMEDIANS, 'utf-8');
+  const comedians = JSON.parse(comediansData);
+
   http
     .createServer(async (req, res) => {
-      if (req.method === 'GET' && req.url === '/comedians') {
-        try {
-          const data = await fs.readFile(COMEDIANS, 'utf-8');
+      try {
+        res.setHeader('Access-Control-Allow-Origin', '*');
 
-          res.writeHead(200, {
-            'Content-Type': 'text/json; charset=utf-8',
-            'Access-Control-Allow-Origin': '*', // разрешаем все завпросы к серверу
-          });
-          res.end(data);
-        } catch (error) {
-          res.writeHead(500, {
-            'Content-Type': 'text/plain; charset=utf-8',
-          });
-          res.end(`Ошибка сервера ${error}`);
+        const segments = req.url.split('/').filter(Boolean); // разбиваем url и убираем пустоты
+
+        if (req.method === 'GET' && segments[0] === 'comedians') {
+          handleComediansRequest(req, res, comedians, segments);
+          return;
         }
-      } else {
-        res.writeHead(404, {
-          'Content-Type': 'text/html; charset=utf-8',
-        });
-        res.end('<h1>Страница не найдена</h1>');
+
+        if (req.method === 'POST' && segments[0] === 'clients') {
+          handleAddClient(req, res);
+          return;
+        }
+
+        if (
+          req.method === 'GET' &&
+          segments[0] === 'clients' &&
+          segments.length === 2
+        ) {
+          // GET / clients/:ticket
+          // получение клиента по номеру билета
+          const ticket = segments[1];
+          handleAddClient(req, res, ticket);
+          return;
+        }
+
+        if (
+          req.method === 'PATCH' &&
+          segments[0] === 'clients' &&
+          segments.length === 2
+        ) {
+          // PATCH / clients/:ticket
+          // обновление клиента по номеру билета
+
+          handleUpdateClient(req, res, segments);
+          return;
+        }
+
+        sendError(res, 404, 'Страница не найдена');
+      } catch (error) {
+        sendError(res, 500, `Ошибка сервера ${error}`);
       }
     })
     .listen(PORT);
