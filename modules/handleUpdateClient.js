@@ -2,8 +2,9 @@ import fs from 'node:fs/promises';
 import { sendData, sendError } from './sendData.js';
 import { CLIENTS } from '../index.js';
 
-export const handleAddClient = (req, res) => {
+export const handleUpdateClient = (req, res, segments) => {
   let body = '';
+  const ticketNumber = segments[1];
 
   try {
     req.on('data', chunk => {
@@ -17,23 +18,23 @@ export const handleAddClient = (req, res) => {
   // когда поток данных завершился и буфер очистился
   req.on('end', async () => {
     try {
-      const newClient = JSON.parse(body);
+      const updateDataClient = JSON.parse(body);
 
       if (
-        !newClient.fullName ||
-        !newClient.phone ||
-        !newClient.ticketNumber ||
-        !newClient.booking
+        !updateDataClient.fullName ||
+        !updateDataClient.phone ||
+        !updateDataClient.ticketNumber ||
+        !updateDataClient.booking
       ) {
         sendError(res, 400, 'Неверные данные клиента');
         return;
       }
 
       if (
-        newClient.booking &&
-        (!newClient.booking.length ||
-          !Array.isArray(newClient.booking) ||
-          !newClient.booking.every(item => item.comedian && item.time))
+        updateDataClient.booking &&
+        (!updateDataClient.booking.length ||
+          !Array.isArray(updateDataClient.booking) ||
+          !updateDataClient.booking.every(item => item.comedian && item.time))
       ) {
         sendError(res, 400, 'Неверные заполнены поля бронирования');
         return;
@@ -42,13 +43,22 @@ export const handleAddClient = (req, res) => {
       const clientData = await fs.readFile(CLIENTS, 'utf-8');
       const clients = JSON.parse(clientData);
 
-      clients.push(newClient);
+      const clientIndex = clients.findIndex(
+        c => c.ticketNumber === ticketNumber,
+      );
+
+      if (clientIndex === -1) {
+        sendError(res, 404, 'Клиент с данным номером билета не найден');
+      }
+
+      clients[clientIndex] = { ...clients[clientIndex], ...updateDataClient };
 
       await fs.writeFile(CLIENTS, JSON.stringify(clients));
 
-      sendData(res, newClient);
+      sendData(res, clients[clientIndex]);
     } catch (error) {
       console.error('error: ', error);
+      sendError(res, 500, 'Ошибка сервера при обновлении данных');
     }
   });
 };
