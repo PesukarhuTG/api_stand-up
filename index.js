@@ -4,6 +4,7 @@ import { sendData, sendError } from './modules/sendData.js';
 import { checkFile } from './modules/checkFile.js';
 import { handleComediansRequest } from './modules/handleComediansRequest.js';
 import { handleAddClient } from './modules/handleAddClient.js';
+import { handleClientsRequest } from './modules/handleClientsRequest.js';
 
 const PORT = 8081;
 const COMEDIANS = './comedians.json';
@@ -43,8 +44,8 @@ const startServer = async () => {
         ) {
           // GET / clients/:ticket
           // получение клиента по номеру билета
-          const ticket = segments[1];
-          handleAddClient(req, res, ticket);
+          const ticketNumber = segments[1];
+          handleClientsRequest(req, res, ticketNumber);
           return;
         }
 
@@ -56,7 +57,7 @@ const startServer = async () => {
           // PATCH / clients/:ticket
           // обновление клиента по номеру билета
 
-          handleUpdateClient(req, res, segments);
+          //handleUpdateClient(req, res, segments);
           return;
         }
 
