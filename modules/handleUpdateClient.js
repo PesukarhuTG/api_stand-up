@@ -51,7 +51,7 @@ export const handleUpdateClient = (req, res, segments) => {
         sendError(res, 404, 'Клиент с данным номером билета не найден');
       }
 
-      clients[clientIndex] = { ...clients[clientIndex], ...updateDataClient };
+      clients[clientIndex] = { ...clients[clientIndex], ...updateDataClient }; // или Object.assign(clients[clientIndex], updateDataClient)
 
       await fs.writeFile(CLIENTS, JSON.stringify(clients));
 
