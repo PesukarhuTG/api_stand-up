@@ -27,34 +27,34 @@ const startServer = async port => {
 
       const segments = req.url.split('/').filter(Boolean); // разбиваем url и убираем пустоты
 
-      if (req.method === 'GET' && segments[0] === 'comedians') {
-        handleComediansRequest(req, res, comedians, segments);
+      // проверка на пустоту
+      if (!segments.length) {
+        sendError(res, 404, 'Нет сегмента запроса данных');
         return;
       }
 
-      if (req.method === 'POST' && segments[0] === 'clients') {
+      // деструктуризация сегмента
+      const [resource, id] = segments;
+
+      if (req.method === 'GET' && resource === 'comedians') {
+        handleComediansRequest(req, res, comedians, id);
+        return;
+      }
+
+      if (req.method === 'POST' && resource === 'clients') {
         handleAddClient(req, res);
         return;
       }
 
-      if (
-        req.method === 'GET' &&
-        segments[0] === 'clients' &&
-        segments.length === 2
-      ) {
+      if (req.method === 'GET' && resource === 'clients' && id) {
         // получение клиента по номеру билета
-        const ticketNumber = segments[1];
-        handleClientsRequest(req, res, ticketNumber);
+        handleClientsRequest(req, res, id);
         return;
       }
 
-      if (
-        req.method === 'PATCH' &&
-        segments[0] === 'clients' &&
-        segments.length === 2
-      ) {
+      if (req.method === 'PATCH' && resource === 'clients' && id) {
         // обновление клиента по номеру билета
-        handleUpdateClient(req, res, segments);
+        handleUpdateClient(req, res, id);
         return;
       }
 

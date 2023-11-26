@@ -49,6 +49,7 @@ export const handleAddClient = (req, res) => {
       sendData(res, newClient);
     } catch (error) {
       console.error('error: ', error);
+      sendError(res, 400, 'Ошибка сервера при чтении запроса');
     }
   });
 };

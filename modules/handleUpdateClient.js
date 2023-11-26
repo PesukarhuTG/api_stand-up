@@ -2,9 +2,8 @@ import fs from 'node:fs/promises';
 import { sendData, sendError } from './sendData.js';
 import { CLIENTS } from '../index.js';
 
-export const handleUpdateClient = (req, res, segments) => {
+export const handleUpdateClient = (req, res, ticketNumber) => {
   let body = '';
-  const ticketNumber = segments[1];
 
   try {
     req.on('data', chunk => {
